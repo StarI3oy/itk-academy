@@ -79,3 +79,8 @@ build/
 │   │   └── wallet-test.js*
 │   └── testdb.go*
 ```
+
+
+P.S.
+
+coverage.out - не репрезентабелен
