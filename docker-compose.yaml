@@ -1,0 +1,65 @@
+services:
+  app:
+    build:
+      dockerfile: build/Dockerfile
+      context: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - wallet_db
+    env_file:
+      - "config.env"
+
+  wallet_db:
+    image: postgres:18
+    restart: always
+    env_file:
+      - "config.env"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wallet
+    ports:
+      - "5432:5432"
+    volumes:
+      - wallet_db_data:/var/lib/postgresql
+    healthcheck: 
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d wallet" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    command: "postgres -c max_connections=1000"
+
+  pgbouncer:
+    image: pgbouncer/pgbouncer
+    container_name: pgbouncer
+    environment:
+      - DATABASES_HOST=wallet_db
+      - DATABASES_PORT=5432
+      - DATABASES_USER=postgres
+      - DATABASES_PASSWORD=postgres
+      - DATABASES_DBNAME=wallet
+      - PGBOUNCER_LISTEN_PORT=5432
+    ports:
+      - "6432:5432"
+    depends_on:
+      wallet_db:
+        condition: service_healthy
+
+  postgres_test:
+    image: postgres:18
+    restart: always
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wallet_test
+
+    ports:
+      - "5434:5432"
+
+
+
+
+volumes:
+  wallet_db_data:
